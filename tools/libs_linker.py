@@ -5,7 +5,7 @@ import os
 import json
 
 def run_fast_scandir(dir, ext):    # dir: str, ext: list
-    dirname = os.getcwd() + '/'
+    dirname = f'{os.getcwd()}/'
     subfolders, files = [], []
     for f in os.scandir(dir):
         if f.is_dir():
@@ -42,17 +42,16 @@ def get_assembly_dependencies(filepath) -> Tuple[set, set]:
                 label = line[:-1].replace(JAL, '').strip()
                 if label not in export:
                     required.add(label)
-            match = re.match(r"\s+lw\s+\$\d+,\s+([^\d]+)\(\$\d+\)", line)
-            if match:
-                label = match.group(1)
+            if match := re.match(r"\s+lw\s+\$\d+,\s+([^\d]+)\(\$\d+\)", line):
+                label = match[1]
                 if label not in export:
                     required.add(label)
     return export, required
 
 def build_dependency_dict(libpath: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     assemblies = get_all_assemblies(libpath)
-    dependency_dict : Dict[str, set] = dict()
-    export_dict : Dict[str, str] = dict()
+    dependency_dict: Dict[str, set] = {}
+    export_dict: Dict[str, str] = {}
     for posixpath in assemblies:
         filepath = str(posixpath)
         export, required = get_assembly_dependencies(posixpath)
@@ -64,11 +63,7 @@ def build_dependency_dict(libpath: str) -> Tuple[Dict[str, str], Dict[str, str]]
 
 def build_dependency_cache(path: str):
     export_dict, dependency_dict = build_dependency_dict(path)
-    obj = {
-        'export': export_dict,
-        'dependency': dependency_dict
-    }
-    return obj
+    return {'export': export_dict, 'dependency': dependency_dict}
 
 def get_dependency_from_cache(libpath: str, cachepath: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     try:
@@ -98,9 +93,7 @@ def get_dependencies(export_dict : Dict[str, str], dependency_dict : Dict[str, s
     return reuqired_files
 
 def serialize_sets(obj):
-    if isinstance(obj, set):
-        return list(obj)
-    return obj
+    return list(obj) if isinstance(obj, set) else obj
 
 def main():
     if(len(sys.argv) < 4):

@@ -23,7 +23,7 @@ def generate(prototypes):
     print("int main(){")
     for proto in prototypes:
         print(f"    printf(\"%s\\n\", \"running {proto}\");")
-        print(f"    reset_fs();")
+        print("    reset_fs();")
         print(f"    {proto}();")
         print(f"    printf(\"%s\\n\\n\", \"passed: {proto}\");")
         print()

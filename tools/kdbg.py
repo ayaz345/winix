@@ -11,14 +11,14 @@ def main():
         return 1
 
     curr_path = path.dirname(path.realpath(__file__))
-    main_path = curr_path + "/.."
+    main_path = f"{curr_path}/.."
     rpath = "include_winix/srec"
 
-    in_file = sys.argv[1] + ".verbose"
+    in_file = f"{sys.argv[1]}.verbose"
     target = int(sys.argv[2],16)
 
-    verbose_filepath = rpath + "/" + in_file
-    verbose_fullpath = main_path + "/" + verbose_filepath
+    verbose_filepath = f"{rpath}/{in_file}"
+    verbose_fullpath = f"{main_path}/{verbose_filepath}"
 
     verbose_line_no = 0
     prevfile = ""
@@ -43,12 +43,12 @@ def main():
                         target_line_num = target - curr_addr
                         addr = curr_addr
                         break
-                    
+
             elif len(line) > 0 and line[0] == '0':
                 splits = line.split(" ")
                 curr_addr = int(splits[0],16)
                 instruction = splits[2]
-                
+
                 if target == curr_addr:
                     addr = curr_addr
                     break
@@ -57,7 +57,7 @@ def main():
     if addr == 0:
         print("Instruction not found 1")
         return 0
-    
+
     filename = prevfile.split(" ")[1].split(", ")[0].replace("'","")\
                     .replace(",","").replace(".o",".c")
     print(f"target assembly line number {target_line_num} in segment {target_segment} in {filename}")
@@ -69,7 +69,7 @@ def main():
     result = call(cc_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     if result != 0:
         tmpfilename = filename.replace(".c",".s")
-        if path.isfile(main_path+"/" +  tmpfilename):
+        if path.isfile(f"{main_path}/{tmpfilename}"):
             print(f"Line: {target_line_num} in {tmpfilename}:{target_line_num}")
             return 0
         else:
@@ -83,7 +83,7 @@ def main():
     found = False
     curr_seg = ".data"
     seg_types = [".text", ".data", ".bss"]
-    
+
     with open(tmp_filename, 'r') as f:
         for idx, line in enumerate(f):
             line = line.replace("\n","")
@@ -102,23 +102,39 @@ def main():
                     # print(f"Current progress: {curr_count} in {curr_seg}")
 
             elif line[0] == '\t':
-                if ".asciiz" in line:
+                if (
+                    ".asciiz" not in line
+                    and ".word" not in line
+                    and curr_seg != ""
+                    and curr_seg != ".text"
+                    and curr_seg == ".bss"
+                    and ".space" in line
+                ):
+                    bss_len = int(line.split(".space")[1].strip())
+                    next_incr = bss_len 
+
+                elif (
+                    ".asciiz" not in line
+                    and ".word" not in line
+                    and curr_seg != ""
+                    and curr_seg != ".text"
+                    and curr_seg == ".bss"
+                    or ".asciiz" not in line
+                    and ".word" not in line
+                    and curr_seg != ""
+                    and curr_seg != ".text"
+                ):
+                    pass
+                elif ".asciiz" in line:
                     tmp_str = line.split(".asciiz")[1].strip().replace("\"","")
                     next_incr = len(tmp_str) + 1 # extra one for string terminator
                     curr_seg = ".data"
-                    
+
                 elif ".word" in line:
                     next_incr = 1
                     curr_seg = ".bss"
-                elif curr_seg == "":
+                else:
                     next_incr = 1
-                elif curr_seg == ".text":
-                    next_incr = 1
-                elif curr_seg == ".bss":
-                    if ".space" in line:
-                        bss_len = int(line.split(".space")[1].strip())
-                        next_incr = bss_len 
-                        
                 if(curr_count <= target_line_num\
                     and curr_count + next_incr >= target_line_num):
                     print(f"Assembly: \n\t0x{instruction}\n {line}")
